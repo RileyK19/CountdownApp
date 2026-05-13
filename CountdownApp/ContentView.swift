@@ -12,7 +12,6 @@ struct ContentView: View {
     @State private var events: [CountdownEvent] = []
     @State private var showingAddSheet = false
     @State private var selectedEvent: CountdownEvent? = nil
-    @State private var eventSelected: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -75,7 +74,6 @@ struct ContentView: View {
                 EventRow(event: event)
                     .onTapGesture {
                         selectedEvent = event
-                        eventSelected = true
                     }
             }
             .onDelete { indexSet in
@@ -96,10 +94,9 @@ struct ContentView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .sheet(isPresented: $eventSelected) {
-            AddEventView(existing: selectedEvent) { newEvent in
-                if let selected = selectedEvent,
-                   let index = events.firstIndex(where: { $0.id == selected.id }) {
+        .sheet(item: $selectedEvent) { event in
+            AddEventView(existing: event) { newEvent in
+                if let index = events.firstIndex(where: { $0.id == event.id }) {
                     events[index] = newEvent
                 }
                 save()
