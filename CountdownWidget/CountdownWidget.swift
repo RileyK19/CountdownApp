@@ -46,8 +46,11 @@ struct CountdownProvider: TimelineProvider {
     }
     
     private func nextEvent(from events: [CountdownEvent]) -> CountdownEvent? {
-        let upcoming = events.filter { $0.daysRemaining >= 0 }.sorted { $0.date < $1.date }
-        return upcoming.first ?? events.sorted { $0.date < $1.date }.last
+//        let upcoming = events.filter { $0.daysRemaining >= 0 }.sorted { $0.date < $1.date }
+//        return upcoming.first ?? events.sorted { $0.date < $1.date }.last
+        return events.sorted { e1, e2 in
+            e1.sortOrder < e2.sortOrder
+        }.first
     }
 }
 

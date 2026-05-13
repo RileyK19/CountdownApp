@@ -15,11 +15,15 @@ public struct CountdownEvent: Codable, Identifiable {
     public var id: UUID
     public var name: String
     public var date: Date
+    public var sortOrder: Int
+    public static var nextOrder: Int = 0
     
     public init(id: UUID = UUID(), name: String, date: Date) {
         self.id = id
         self.name = name
         self.date = date
+        self.sortOrder = CountdownEvent.nextOrder
+        CountdownEvent.nextOrder += 1
     }
     
     public var daysRemaining: Int {

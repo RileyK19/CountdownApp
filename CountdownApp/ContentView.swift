@@ -11,6 +11,8 @@ import WidgetKit
 struct ContentView: View {
     @State private var events: [CountdownEvent] = []
     @State private var showingAddSheet = false
+    @State private var selectedEvent: CountdownEvent? = nil
+    @State private var eventSelected: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -24,6 +26,9 @@ struct ContentView: View {
             .navigationTitle("Countdowns")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    EditButton()
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingAddSheet = true
                     } label: {
@@ -34,7 +39,9 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddEventView { newEvent in
-                    events.append(newEvent)
+                    var event = newEvent
+                    event.sortOrder = events.count
+                    events.append(event)
                     save()
                 }
             }
@@ -64,19 +71,40 @@ struct ContentView: View {
     
     private var eventList: some View {
         List {
-            ForEach(events.sorted { $0.date < $1.date }) { event in
+            ForEach(events.sorted { $0.sortOrder < $1.sortOrder }) { event in
                 EventRow(event: event)
+                    .onTapGesture {
+                        selectedEvent = event
+                        eventSelected = true
+                    }
             }
             .onDelete { indexSet in
-                let sorted = events.sorted { $0.date < $1.date }
+                let sorted = events.sorted { $0.sortOrder < $1.sortOrder }
                 for index in indexSet {
                     let toRemove = sorted[index]
                     events.removeAll { $0.id == toRemove.id }
                 }
                 save()
             }
+            .onMove { from, to in
+                events.move(fromOffsets: from, toOffset: to)
+                for (i, var event) in events.enumerated() {
+                    event.sortOrder = i
+                    events[i] = event
+                }
+                save()
+            }
         }
         .listStyle(.insetGrouped)
+        .sheet(isPresented: $eventSelected) {
+            AddEventView(existing: selectedEvent) { newEvent in
+                if let selected = selectedEvent,
+                   let index = events.firstIndex(where: { $0.id == selected.id }) {
+                    events[index] = newEvent
+                }
+                save()
+            }
+        }
     }
     
     private func save() {
@@ -146,11 +174,19 @@ struct EventRow: View {
 
 // MARK: - Add Event Sheet
 struct AddEventView: View {
+    var existing: CountdownEvent? = nil
     @Environment(\.dismiss) var dismiss
     @State private var name = ""
     @State private var date = Date()
     
     var onAdd: (CountdownEvent) -> Void
+    
+    init(existing: CountdownEvent? = nil, onAdd: @escaping (CountdownEvent) -> Void) {
+        self.existing = existing
+        self.onAdd = onAdd
+        _name = State(initialValue: existing?.name ?? "")
+        _date = State(initialValue: existing?.date ?? Date())
+    }
     
     var body: some View {
         NavigationStack {
